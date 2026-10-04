@@ -1,0 +1,16 @@
+{
+  "name": "dotclaude",
+  "description": "Personal Claude Code plugins for planning and working with Claude.",
+  "owner": {
+    "name": "Linhua Zhou",
+    "url": "https://github.com/zhoulinhua0-star"
+  },
+  "plugins": [
+    {
+      "name": "workflow",
+      "source": "./plugins/workflow",
+      "description": "Skills that shape how Claude approaches a task, starting with ask-first: clarifying questions with recommendations, then a plan for approval.",
+      "category": "productivity"
+    }
+  ]
+}

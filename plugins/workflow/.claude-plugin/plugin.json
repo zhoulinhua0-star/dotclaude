@@ -1,0 +1,11 @@
+{
+  "name": "workflow",
+  "description": "Skills that shape how Claude approaches a task, starting with ask-first: clarifying questions with recommendations, then a plan for approval.",
+  "author": {
+    "name": "Linhua Zhou",
+    "url": "https://github.com/zhoulinhua0-star"
+  },
+  "repository": "https://github.com/zhoulinhua0-star/dotclaude",
+  "license": "MIT",
+  "keywords": ["planning", "clarifying-questions", "workflow"]
+}
