@@ -90,10 +90,11 @@ If no other installed skill is named `ask-first`, the short form `/ask-first` al
 What happens next:
 
 1. Claude reads the code and docs relevant to the task, such as the existing onboarding tips, the settings model and how versions are tracked.
-2. A question dialog opens. Each question has 2 to 4 options, and the recommended one is listed first with its reasoning, for example: "Show once per version (Recommended): matches the existing one-time tip in `Onboarding.tsx`".
+2. Claude says in a sentence how it understands the task and what it found, so you can correct a misreading before answering. Then a question dialog opens. Each question has 2 to 4 options, and the recommended one is listed first with its reasoning, for example: "Show once per version (Recommended): matches the existing one-time tip in `Onboarding.tsx`".
 3. You pick an option for each question, type your own answer, or accept the recommendations.
 4. Claude presents a short plan with your choices, the defaults it applied, the files it will change and how it will verify the result. Then it waits.
 5. Nothing is implemented until you approve the plan.
+6. After implementing, Claude reports each verification item as passed, failed or not run, and lists anything that differs from the plan.
 
 The skill runs only when you invoke it. Claude never starts it on its own.
 
@@ -104,10 +105,14 @@ The skill runs only when you invoke it. Claude never starts it on its own.
 - **As many questions as the task needs.** There is no fixed count. Claude asks every question that would change the plan and nothing else. Each dialog holds up to 4 questions, and Claude fills each one before opening the next, so you see as few dialogs as possible. Only questions that depend on your earlier answers wait for a later dialog. If the questions keep multiplying, Claude suggests narrowing or splitting the task instead.
 - **Recommendations with reasons.** Every question comes with a clear recommendation and the trade-off of each option. If you choose differently, Claude follows your choice without arguing. If you reply with a question instead of a choice, Claude answers it and asks again.
 - **Scope asked separately.** If the scope is unclear, or the task touches something you said not to change, scope gets its own question.
+- **Understanding stated first.** Before the first question, Claude states the task as it understands it and the findings its questions rest on. If it misread the task, you can correct it before answering anything.
 - **Text fallback.** Where the dialog isn't available, such as with `claude -p` or inside a subagent, questions are asked in text with lettered options and a suggestion for each. You can reply with letters only, or say "take your suggestions for the rest".
+- **Fact questions in text.** A question about something only you know, such as which environment to target, is asked directly in text without invented options. If the code suggests a likely answer, Claude states it so you only have to confirm.
 - **Your language.** Questions and the plan are written in the language you write in, not the language of text you paste.
 - **Preview for UI work.** For interface changes, you make visual decisions from an interactive preview instead of a dialog, so each decision is asked only once. In plan mode, where files can't be written, Claude uses a preview tool if the session has one, a text mockup in the dialog when that is clear enough, or makes the preview the first step after you approve the plan.
-- **Approval before code.** Claude writes no code until you approve the plan. In plan mode, it submits the plan through the plan approval dialog. If the plan turns out to need a material change during implementation, Claude stops and asks for approval again.
+- **Approval before code.** Claude writes no code until you approve the plan. Approving with a small change in the same message, such as a rename, counts as approval, so Claude applies it and starts. A material change gets a revised plan and another wait. In plan mode, it submits the plan through the plan approval dialog, in the same short format. If the plan turns out to need a material change during implementation, Claude stops and asks for approval again.
+- **One planning workflow.** While the skill runs, Claude doesn't hand the task to another planning skill or planner agent, even one that asks to be used proactively.
+- **Report, then done.** After implementing, Claude reports the result of each verification item and any deviation from the plan. The skill ends there: later requests in the session are handled normally unless you invoke it again.
 
 ## Repository layout
 

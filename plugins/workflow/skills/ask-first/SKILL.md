@@ -9,13 +9,15 @@ disable-model-invocation: true
 
 The user invoked this skill to think a task through with you before any work starts. Work in four phases: research, decide what to ask, ask, then plan. Don't write code or change project files until the user approves the plan. Getting the decisions right first is the whole point, and code written before then often has to be thrown away.
 
+This skill is the planning workflow for this task. Don't hand the task to another planning skill, command or planner agent, even one whose description says to use it proactively, because the user chose this flow and another one would replace its questions and plan format with its own.
+
 Task: $ARGUMENTS
 
-If the task above is empty, use the task the user has been discussing in this conversation and restate it in one sentence. If there is no such task, ask the user what they want to work on and stop.
+If the task above is empty, use the task the user has been discussing in this conversation. If there is no such task, ask the user what they want to work on and stop.
 
 ## Language
 
-Write the questions, options, recommendations and plan in the language the user writes in, judged from the messages they wrote themselves. Ignore the language of pasted or quoted material, such as a copied spec or an error message, because people often converse in one language and paste text in another. If the task text is all you have, use its language. Keep code, identifiers, file paths and command names unchanged.
+Write the questions, options, recommendations, plan and final report in the language the user writes in, judged from the messages they wrote themselves. Ignore the language of pasted or quoted material, such as a copied spec or an error message, because people often converse in one language and paste text in another. If the task text is all you have, use its language. Keep code, identifiers, file paths and command names unchanged.
 
 ## Phase 1: Research before asking
 
@@ -39,7 +41,7 @@ Outside a codebase, for example a writing or research task, go straight to Phase
 
 List every open decision, then sort each one into one of two groups:
 
-- **Ask** when the answer changes the plan (what gets built, which files change, user-visible behavior, the data model, or what is in scope) and reasonable people could choose differently.
+- **Ask** when the answer changes the plan (what gets built, which files change, user-visible behavior, the data model, or what is in scope) and either reasonable people could choose differently or it rests on a fact only the user knows, such as which environment or endpoint to target.
 - **Default** when a sensible convention covers it, such as matching the existing pattern, naming, error-handling style or test placement. Decide these yourself and list them under "Defaults I applied" in the plan, where the user can still override them.
 
 If the scope is ambiguous, or the task seems to touch something the user said not to change, ask about scope as a separate question. Don't fold it into another one. Scope mistakes are the most expensive to undo.
@@ -56,6 +58,12 @@ If the questions keep multiplying, the task is probably too large or too vague t
 
 ## Phase 3: Ask
 
+### Open with your understanding
+
+Before the first question, tell the user in one sentence what you understand the task to be, then give the few findings from your research that the questions rest on. Every question follows from how you read the task, so a misreading spoils all of them, and this is the user's chance to catch it before answering. Keep it to a few lines, and write it in the same turn as the first dialog so it appears above it. Do this even when there is nothing to ask and you go straight to the plan.
+
+If the user corrects your understanding instead of answering, redo the research and the questions that the correction affects.
+
 ### Preferred: the AskUserQuestion dialog
 
 Use the AskUserQuestion tool when it is available. One dialog holds up to 4 questions. Each dialog interrupts the user, so use as few as possible: fill a dialog with up to 4 questions before opening the next, in order of importance rather than by topic. Only a question that depends on an earlier answer waits for a later dialog. For each question:
@@ -68,7 +76,7 @@ Use the AskUserQuestion tool when it is available. One dialog holds up to 4 ques
 
 ### Fallback: ask in text
 
-Ask in plain text when AskUserQuestion is unavailable (for example under `claude -p` or inside a subagent), or when a question needs more explanation than an option description can hold. Use this format:
+Ask in plain text when AskUserQuestion is unavailable (for example under `claude -p` or inside a subagent), when a question needs more explanation than an option description can hold, or when it asks for a fact only the user knows. Use this format:
 
 ```
 1. <Question>
@@ -82,7 +90,9 @@ Ask in plain text when AskUserQuestion is unavailable (for example under `claude
 
 Close with a line telling the user they can answer with letters only (for example `1a 2c`), or say "take your suggestions for the rest". Then stop and wait for the reply.
 
-You can mix both forms: dialog questions, plus a text question for the one that needs a longer explanation.
+A fact question has no trade-offs to weigh, so ask it directly and don't invent options for it. If the code suggests a likely answer, state it so the user only has to confirm, for example: "Which environment should this target? `deploy.yml` only references `staging`, so I'd assume that."
+
+You can mix both forms: dialog questions, plus text questions for facts and for anything that needs a longer explanation. Open the dialog first, then ask the text questions after it is answered and wait for the reply. If a dialog question depends on a fact, ask the fact first.
 
 ### How to recommend
 
@@ -131,8 +141,16 @@ Leave out any section that would be empty, except Verification.
 
 ### Approval
 
-Stop after presenting the plan. Don't edit project files, run commands that change state, or start implementing until the user explicitly approves, with something like "go", "approved" or "looks good, do it". Answers to your questions don't count as approval of the plan. If the user asks for changes, revise the plan and wait again.
+Stop after presenting the plan. Don't edit project files, run commands that change state, or start implementing until the user explicitly approves, with something like "go", "approved" or "looks good, do it". Answers to your questions don't count as approval of the plan.
+
+If the user approves and asks for a small change in the same message, such as a rename or leaving one file out, that is approval. Apply the change, say in one line what you changed, and start. If the user asks for changes without approving, or the change is material, such as a different approach, a wider scope or a reversed decision, revise the plan and wait again.
 
 After approval, implement the plan as approved. If you find during implementation that it needs a material change, such as different files, an approach the user didn't choose, or a wider scope, stop, explain what you found, and get approval for the revised plan before continuing. Details within the approved approach don't need a new approval.
 
-If the session is already in plan mode, submit the plan with ExitPlanMode instead of only printing it, because the user's approval in that dialog is the explicit approval. Don't switch into plan mode yourself.
+If the session is already in plan mode, write the plan in the format above, not a longer one, and submit it with ExitPlanMode instead of only printing it, because the user's approval in that dialog is the explicit approval. Don't switch into plan mode yourself.
+
+### Report, then finish
+
+When the implementation is done, report against the plan. For each item under Verification, say whether it passed, failed or was not run, and include the failing output when something failed. List anything that ended up different from the approved plan. Keep the report as short as the plan.
+
+This skill covers the one task it was invoked for and ends with that report. Treat later requests in the session as ordinary requests, without the questions, plan and approval steps, unless the user invokes the skill again.
