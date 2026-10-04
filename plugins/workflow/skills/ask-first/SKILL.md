@@ -40,18 +40,21 @@ List every open decision, then sort each one into one of two groups:
 
 If the scope is ambiguous, or the task seems to touch something the user said not to change, ask about scope as a separate question. Don't fold it into another one. Scope mistakes are the most expensive to undo.
 
-How many questions to ask:
+How many questions to ask is your judgment, not a fixed number. Ask every question that belongs in the Ask group and none that don't. A small, well-specified task may need one question or none, while a task with many independent design choices may need several dialogs. The bar is what keeps this short: before adding a question, check that its answer would change the plan and that neither the code nor a convention could settle it.
 
-- **Simple task:** one round of at most 4 questions. If nothing qualifies for the Ask group, say so in one line and go straight to the plan.
-- **Complex task** (several components, design choices that depend on each other, or unclear scope): up to two rounds and at most 8 questions in total. Use the second round for questions that depend on the first round's answers. Don't hold back independent questions just to fill a second round.
+Order and grouping:
 
-Put the most consequential questions first.
+- Put the most consequential questions first, and scope first if it is in question.
+- Ask questions that don't depend on each other together. Hold a question back for a later dialog only when it depends on an earlier answer.
+- If nothing qualifies for the Ask group, say so in one line and go straight to the plan.
+
+If the questions keep multiplying, the task is probably too large or too vague to plan in one go. Say so, and ask whether to narrow the scope or split the task instead of continuing to ask.
 
 ## Phase 3: Ask
 
 ### Preferred: the AskUserQuestion dialog
 
-Use the AskUserQuestion tool when it is available, with one call per round of up to 4 questions. For each question:
+Use the AskUserQuestion tool when it is available. One dialog holds up to 4 questions. Each dialog interrupts the user, so use as few as possible: fill a dialog with up to 4 questions before opening the next, in order of importance rather than by topic. Only a question that depends on an earlier answer waits for a later dialog. For each question:
 
 - Offer 2 to 4 options. Put your recommended option first and end its label with "(Recommended)".
 - In each option's description, state its trade-off in one or two sentences. In the recommended option's description, give the reason you recommend it, and cite the code when that is where the reason comes from.
@@ -75,7 +78,7 @@ Ask in plain text when AskUserQuestion is unavailable (for example under `claude
 
 Close with a line telling the user they can answer with letters only (for example `1a 2c`), or say "take your suggestions for the rest". Then stop and wait for the reply.
 
-One round can mix both forms: dialog questions, plus a text question for the one that needs a longer explanation.
+You can mix both forms: dialog questions, plus a text question for the one that needs a longer explanation.
 
 ### How to recommend
 
@@ -83,7 +86,7 @@ Take a clear position. A recommendation that lists every possibility doesn't hel
 
 When the user picks an option you didn't recommend, follow it without arguing and don't raise it again. If their choice causes a concrete problem you hadn't mentioned, such as a conflict with existing code, note it once in the plan.
 
-If the user says "take your suggestions" or the equivalent in their language, apply your recommendation to every remaining question, including any second round, and move on to the plan.
+If the user says "take your suggestions" or the equivalent in their language, apply your recommendation to every remaining question, including any you had planned for later dialogs, and move on to the plan.
 
 ## Phase 4: Plan, then wait for approval
 

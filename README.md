@@ -101,7 +101,7 @@ The skill runs only when you invoke it. Claude never starts it on its own.
 
 - **Research first.** Claude reads the relevant code before asking, so it doesn't ask what the code already answers. When a question depends on the current state, it cites what it found.
 - **Only questions that matter.** It asks only about decisions that change the plan. Anything a sensible default covers is decided for you and listed in the plan, where you can still override it.
-- **Adaptive length.** A simple task gets one round of up to 4 questions. A complex task gets up to two rounds, 8 questions in total, and the second round builds on your first answers.
+- **As many questions as the task needs.** There is no fixed count. Claude asks every question that would change the plan and nothing else. Each dialog holds up to 4 questions, and Claude fills each one before opening the next, so you see as few dialogs as possible. Only questions that depend on your earlier answers wait for a later dialog. If the questions keep multiplying, Claude suggests narrowing or splitting the task instead.
 - **Recommendations with reasons.** Every question comes with a clear recommendation and the trade-off of each option. If you choose differently, Claude follows your choice without arguing.
 - **Scope asked separately.** If the scope is unclear, or the task touches something you said not to change, scope gets its own question.
 - **Text fallback.** Where the dialog isn't available, such as with `claude -p` or inside a subagent, questions are asked in text with lettered options and a suggestion for each. You can reply with letters only, or say "take your suggestions for the rest".
