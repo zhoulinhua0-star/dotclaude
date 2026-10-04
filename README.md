@@ -99,15 +99,15 @@ The skill runs only when you invoke it. Claude never starts it on its own.
 
 ## How `ask-first` works
 
-- **Research first.** Claude reads the relevant code before asking, so it doesn't ask what the code already answers. When a question depends on the current state, it cites what it found.
+- **Research first.** Claude reads the relevant code before asking, so it doesn't ask what the code already answers. When a question depends on the current state, it cites what it found. Research is kept proportionate to the task, and if the task is too vague to know where to look, Claude asks about scope first.
 - **Only questions that matter.** It asks only about decisions that change the plan. Anything a sensible default covers is decided for you and listed in the plan, where you can still override it.
 - **As many questions as the task needs.** There is no fixed count. Claude asks every question that would change the plan and nothing else. Each dialog holds up to 4 questions, and Claude fills each one before opening the next, so you see as few dialogs as possible. Only questions that depend on your earlier answers wait for a later dialog. If the questions keep multiplying, Claude suggests narrowing or splitting the task instead.
-- **Recommendations with reasons.** Every question comes with a clear recommendation and the trade-off of each option. If you choose differently, Claude follows your choice without arguing.
+- **Recommendations with reasons.** Every question comes with a clear recommendation and the trade-off of each option. If you choose differently, Claude follows your choice without arguing. If you reply with a question instead of a choice, Claude answers it and asks again.
 - **Scope asked separately.** If the scope is unclear, or the task touches something you said not to change, scope gets its own question.
 - **Text fallback.** Where the dialog isn't available, such as with `claude -p` or inside a subagent, questions are asked in text with lettered options and a suggestion for each. You can reply with letters only, or say "take your suggestions for the rest".
-- **Your language.** Questions and the plan are written in the language you use.
-- **Preview for UI work.** For interface changes, Claude builds an interactive preview of the options before finalizing the plan.
-- **Approval before code.** Claude writes no code until you approve the plan. In plan mode, it submits the plan through the plan approval dialog.
+- **Your language.** Questions and the plan are written in the language you write in, not the language of text you paste.
+- **Preview for UI work.** For interface changes, you make visual decisions from an interactive preview instead of a dialog, so each decision is asked only once. In plan mode, where files can't be written, Claude uses a preview tool if the session has one, a text mockup in the dialog when that is clear enough, or makes the preview the first step after you approve the plan.
+- **Approval before code.** Claude writes no code until you approve the plan. In plan mode, it submits the plan through the plan approval dialog. If the plan turns out to need a material change during implementation, Claude stops and asks for approval again.
 
 ## Repository layout
 

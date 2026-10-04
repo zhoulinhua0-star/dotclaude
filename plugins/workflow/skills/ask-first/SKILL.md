@@ -1,6 +1,6 @@
 ---
 name: ask-first
-description: Clarify a task before planning it. Reads the relevant code, asks a few focused questions that each come with a recommended answer and its trade-offs, then presents a short plan and waits for approval before writing any code. Use at the start of a feature, refactor, or design task whose requirements are not fully settled.
+description: Clarify a task before planning it. Reads the relevant code, asks the questions that would change the plan, each with a recommended answer and its trade-offs, then presents a short plan and waits for approval before writing any code. Use at the start of a feature, refactor, or design task whose requirements are not fully settled.
 argument-hint: "<task description>"
 disable-model-invocation: true
 ---
@@ -15,7 +15,7 @@ If the task above is empty, use the task the user has been discussing in this co
 
 ## Language
 
-Write the questions, options, recommendations and plan in the language the user writes in, judged from the task text and their recent messages. Keep code, identifiers, file paths and command names unchanged.
+Write the questions, options, recommendations and plan in the language the user writes in, judged from the messages they wrote themselves. Ignore the language of pasted or quoted material, such as a copied spec or an error message, because people often converse in one language and paste text in another. If the task text is all you have, use its language. Keep code, identifiers, file paths and command names unchanged.
 
 ## Phase 1: Research before asking
 
@@ -26,6 +26,10 @@ A question the code could have answered wastes the user's attention and shows yo
 - configuration that constrains the change
 
 Also note any constraints the user stated earlier in the conversation or in `CLAUDE.md`, especially things they said not to change.
+
+Match the depth of research to the task. A focused change needs the few files it touches. A broad task needs a quick survey, not a full read of the codebase. The user is waiting for your first question, so stop once you know enough to ask well; you can read more after their answers narrow things down.
+
+If the task is too vague to know where to look, for example "make it faster" with no hint of which part, don't search the whole codebase first. Ask the scope question first, then research what the answer points to.
 
 When a question depends on the current state, cite what you found, so the user can answer without opening the code. For example: "There is already a one-time tip in `Onboarding.tsx` that hides after 7 seconds."
 
@@ -59,7 +63,7 @@ Use the AskUserQuestion tool when it is available. One dialog holds up to 4 ques
 - Offer 2 to 4 options. Put your recommended option first and end its label with "(Recommended)".
 - In each option's description, state its trade-off in one or two sentences. In the recommended option's description, give the reason you recommend it, and cite the code when that is where the reason comes from.
 - Keep the header to 12 characters or fewer.
-- When the options differ in a way that is easier to see than to describe, such as UI layouts, code snippets or configurations, put a short mockup or snippet in each option's `preview` field.
+- When the options differ in a way that is easier to see than to describe, such as code snippets or configurations, put a short snippet in each option's `preview` field. Leave visual UI decisions out of the dialog when you will build an interactive preview for them (see Phase 4), so the user decides each one once.
 - The dialog adds an "Other" choice for free-text answers by itself, so don't add your own.
 
 ### Fallback: ask in text
@@ -84,6 +88,8 @@ You can mix both forms: dialog questions, plus a text question for the one that 
 
 Take a clear position. A recommendation that lists every possibility doesn't help anyone decide. Base it on what you found in the code and what the user has said.
 
+If the user replies to a question with a question of their own, such as how two options differ, answer it, then ask the original question again. Don't treat the follow-up as their choice.
+
 When the user picks an option you didn't recommend, follow it without arguing and don't raise it again. If their choice causes a concrete problem you hadn't mentioned, such as a conflict with existing code, note it once in the plan.
 
 If the user says "take your suggestions" or the equivalent in their language, apply your recommendation to every remaining question, including any you had planned for later dialogs, and move on to the plan.
@@ -92,7 +98,13 @@ If the user says "take your suggestions" or the equivalent in their language, ap
 
 ### UI work: build a preview first
 
-If the task changes a user interface and a question compared visual options, build an interactive preview of those options before presenting the plan, so the user can choose from something they can see and click. Use the best tool this session offers. If there is an Artifact or browser preview tool, use it. Otherwise write a single self-contained HTML file outside the project, for example in the scratchpad or system temp directory, and open it. Keep preview files out of the repository. Ask the user to pick an option, then put their choice into the plan.
+If the task changes a user interface and a decision is about how it looks or behaves, let the user make that decision from an interactive preview rather than from a dialog, so they choose from something they can see and click and are asked only once. Build the preview after the dialog questions are answered, so it reflects those answers. Use the best tool this session offers. If there is an Artifact or browser preview tool, use it. Otherwise write a single self-contained HTML file outside the project, for example in the scratchpad or system temp directory, and open it. Keep preview files out of the repository. Ask the user to pick an option, then put their choice into the plan.
+
+In plan mode you can't write files, so choose by what the session offers:
+
+- If a preview tool that doesn't write local files is available, such as an Artifact tool, use it as usual.
+- Otherwise, if a text mockup shows the difference clearly (layout, ordering, which elements appear), ask the decision in the dialog with a mockup in each option's `preview` field. This is the one case where a visual decision goes in the dialog, because no interactive preview will be built.
+- If the difference has to be seen to be judged (color, motion, spacing), make "build a preview of the options and let the user choose" the first step of the plan, and implement the rest only after they choose.
 
 ### The plan
 
@@ -120,5 +132,7 @@ Leave out any section that would be empty, except Verification.
 ### Approval
 
 Stop after presenting the plan. Don't edit project files, run commands that change state, or start implementing until the user explicitly approves, with something like "go", "approved" or "looks good, do it". Answers to your questions don't count as approval of the plan. If the user asks for changes, revise the plan and wait again.
+
+After approval, implement the plan as approved. If you find during implementation that it needs a material change, such as different files, an approach the user didn't choose, or a wider scope, stop, explain what you found, and get approval for the revised plan before continuing. Details within the approved approach don't need a new approval.
 
 If the session is already in plan mode, submit the plan with ExitPlanMode instead of only printing it, because the user's approval in that dialog is the explicit approval. Don't switch into plan mode yourself.
