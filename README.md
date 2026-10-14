@@ -116,7 +116,7 @@ What happens:
 
 1. Claude reads the real component, styles, copy and assets for that part. It doesn't change any project files.
 2. It designs about 4–6 distinct options plus the current version as option 0. It marks one **Recommended**, flags copy that overclaims, motion that's heavier on low-end devices, and anything simulated. One or two **Bold** options may break from the site's current look.
-3. It builds a single preview page in the session scratchpad, serves it on `localhost` and opens it in Chrome. Click an option to see it live. Replay animations, switch between desktop, tablet and mobile widths, and toggle the part's modes if it has any.
+3. It builds a single preview page in the session scratchpad, serves it on `localhost` and opens it in Chrome. Click an option to see it live, switch between desktop, tablet and mobile widths, and toggle the part's modes if it has any. Motion previews get a playback bar with play/pause, scrubbing, slow motion down to 0.1× and looping. It works for CSS animations, the Web Animations API, GSAP timelines and custom JS. Scroll-linked effects get a scrollable stage.
 4. Press **Copy my choice** at the bottom and paste the result into Claude Code. It names exact option IDs and copy, so implementation needs no memory of the preview.
 
 Browser checks work best with the [Claude in Chrome](https://code.claude.com/docs/en/chrome) extension. Without it, Claude gives you the URL to open yourself.

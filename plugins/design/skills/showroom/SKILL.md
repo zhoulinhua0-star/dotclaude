@@ -41,7 +41,12 @@ Polish within the site's design language so the pick can actually ship. One or t
    - fonts
    - `window.SHOWROOM`: sections, options with their `html` (or `<template>`), `css`, optional `script` for JS motion, `pick` text, badges and notes
 
-   Each preview renders in its own iframe, so paste the project's CSS as it is in the repo. `:root` tokens, `body` styles and breakpoints behave as on the real site, including in the Tablet and Mobile widths. Don't rewrite the chrome. It already provides the sticky "Preview only" bar, option cards, live stage, Replay, a viewport switch, variant and toggle controls, and the **Copy my choice** button with a clipboard fallback. Use one section per distinct part being explored. Use `variants` when the part has modes, so the user picks once per mode. Write each `pick` so it stands alone: the exact copy, or a precise one-line description of the design or motion.
+   Each preview renders in its own iframe, so paste the project's CSS as it is in the repo. `:root` tokens, `body` styles and breakpoints behave as on the real site, including in the Tablet and Mobile widths. Don't rewrite the chrome.
+
+   Motion can be as rich as the idea needs: choreographed sequences, video-like intros, looping ambient motion, canvas or WebGL scenes. Each preview has a playback bar with play/pause, a scrub slider, speed buttons (0.1× to 1×) and a loop switch, so the user can study timing frame by frame.
+   - **CSS and `el.animate()`:** the bar controls these on its own, which makes them the easiest to build.
+   - **Libraries:** list GSAP, Lottie or similar in `libs`. Have `script` return the GSAP timeline, or a small `{ duration, seek, play, pause, setRate }` adapter for any other JS motion, so the bar can drive it too.
+   - **Scroll-linked effects:** set `stage.scroll` (e.g. `560`) to get a fixed-height window the user scrolls inside. It already provides the sticky "Preview only" bar, option cards, live stage, Replay, a viewport switch, variant and toggle controls, and the **Copy my choice** button with a clipboard fallback. Use one section per distinct part being explored. Use `variants` when the part has modes, so the user picks once per mode. Write each `pick` so it stands alone: the exact copy, or a precise one-line description of the design or motion.
 4. **Serve and open.** Run `python3 -m http.server <free port>` from that folder in the background. Open `http://localhost:<port>` (localhost, not 127.0.0.1) in a new tab with the browser tools available, preferring Claude in Chrome. If no browser tool is available, just give the URL.
 5. **Check it.** Click a few options, press Replay on a motion option, take a screenshot, and read the console. Fix anything broken before replying.
 

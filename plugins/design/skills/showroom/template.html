@@ -196,6 +196,34 @@
   .sr-stage-wrap { background: repeating-conic-gradient(rgba(23,23,26,.035) 0 25%, transparent 0 50%) 0 0 / 18px 18px; display: flex; justify-content: center; }
   .sr-stage { width: 100%; transition: max-width .35s var(--sr-ease); background: #fff; overflow: hidden; }
   .sr-frame { display: block; width: 100%; border: 0; background: transparent; }
+  .sr-frame.is-scroll { overscroll-behavior: contain; }
+
+  /* Playback bar */
+  .sr-play { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 12px; border-top: 1px solid var(--sr-line); background: #fbfbfa; }
+  .sr-iconbtn {
+    flex: none; width: 30px; height: 30px; border-radius: 50%; border: 0;
+    display: grid; place-items: center; background: var(--sr-ink); color: #fff;
+  }
+  .sr-iconbtn:hover { transform: scale(1.06); box-shadow: 0 3px 10px rgba(0,0,0,.2); }
+  .sr-iconbtn:active { transform: scale(.92); }
+  .sr-iconbtn svg { width: 12px; height: 12px; }
+  .sr-scrub { flex: 1; min-width: 120px; height: 20px; margin: 0; background: transparent; cursor: pointer; -webkit-appearance: none; appearance: none; --p: 0%; }
+  .sr-scrub:focus-visible { outline: 2px solid var(--sr-accent); outline-offset: 2px; border-radius: 6px; }
+  .sr-scrub::-webkit-slider-runnable-track { height: 4px; border-radius: 99px; background: linear-gradient(var(--sr-accent), var(--sr-accent)) 0 0 / var(--p) 100% no-repeat, rgba(23,23,26,.12); }
+  .sr-scrub::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; margin-top: -5px; border-radius: 50%; background: #fff; border: 1.5px solid var(--sr-accent); box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: transform .15s var(--sr-ease); }
+  .sr-scrub:hover::-webkit-slider-thumb { transform: scale(1.18); }
+  .sr-scrub:active::-webkit-slider-thumb { transform: scale(.92); }
+  .sr-scrub::-moz-range-track { height: 4px; border-radius: 99px; background: rgba(23,23,26,.12); }
+  .sr-scrub::-moz-range-progress { height: 4px; border-radius: 99px; background: var(--sr-accent); }
+  .sr-scrub::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 1.5px solid var(--sr-accent); box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+  .sr-time { font: 11.5px var(--sr-mono); color: var(--sr-ink-2); min-width: 96px; text-align: right; font-variant-numeric: tabular-nums; }
+  .sr-seg.sm button { padding: 4px 8px; font-size: 11.5px; }
+  .sr-loop { padding: 4px 6px; font-size: 12px; font-weight: 600; color: var(--sr-ink-2); }
+  .sr-loop .sr-switch { width: 26px; height: 16px; }
+  .sr-loop .sr-switch::after { width: 12px; height: 12px; }
+  .sr-loop[aria-checked="true"] .sr-switch::after { transform: translateX(10px); }
+  .sr-play.is-idle .sr-scrub, .sr-play.is-idle .sr-time, .sr-play.is-idle .sr-iconbtn, .sr-play.is-idle .sr-loop { opacity: .38; pointer-events: none; }
+
   .sr-flags { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 8px 12px; border-top: 1px solid var(--sr-line); background: #fbfbfa; }
   .sr-flags:empty { display: none; }
   .sr-flag { font-size: 12px; color: var(--sr-ink-2); }
@@ -290,6 +318,9 @@ window.SHOWROOM = {
   projectCss: `
     /* :root { --brand: #...; } body { font-family: "Brand", sans-serif; } */
   `,
+  // Script URLs loaded into every preview frame before the markup, e.g. GSAP or lottie-web from a CDN.
+  // Sections and options can add their own `libs` too. In option scripts use ctx.window.gsap etc.
+  libs: [],
   // Optional toggles. When on, the preview's <html> gets class "t-<id>" (style with html.t-<id> ...)
   // and the copied text records it.
   toggles: [
@@ -306,7 +337,9 @@ window.SHOWROOM = {
         // { id: "biz", label: "For businesses" }, { id: "consumer", label: "For consumers" }
       ],
       css: ``,                          // CSS shared by this section's options (copied from the real component)
-      stage: { background: "#fff", minHeight: 360, padding: "0" },
+      // scroll: a number makes the stage a fixed-height window you scroll inside, for scroll-linked
+      // effects (animation-timeline: view()/scroll(), IntersectionObserver, sticky, parallax).
+      stage: { background: "#fff", minHeight: 360, padding: "0" /*, scroll: 560 */ },
       simulated: [],                    // section-wide notes, e.g. "Nav bar omitted"
       options: [
         {
@@ -316,8 +349,14 @@ window.SHOWROOM = {
           // variant: "biz",            // set when the option belongs to one variant only
           html: `<!-- real current markup -->`,   // or template: "tpl-A0"
           css: ``,                      // option-only CSS; scoped automatically
-          // script(root, ctx) { ...; return () => cleanup },  // optional JS motion; re-runs on Replay.
-          //   ctx = { variant, toggles, reducedMotion, document, window } of the preview frame
+          // script(root, ctx) { ... },  // optional JS motion; re-runs on Replay.
+          //   ctx = { variant, toggles, reducedMotion, document, window } of the preview frame.
+          //   The playback bar drives CSS animations/transitions and el.animate() on its own.
+          //   For other motion return one of:
+          //     - a cleanup function
+          //     - a GSAP timeline or tween (pause, speed and scrub then work on it)
+          //     - { duration: ms, seek(ms), play(), pause(), setRate(r), cleanup() }, any subset
+          // libs: [],                  // extra script URLs for this option only
           pick: "",                     // exact copy, or one line describing the design/motion; goes into the copied text
           badges: [],                   // any of: "recommended", "bold", "simulated"
           recommendedWhy: "",           // one sentence, with "recommended"
@@ -352,6 +391,9 @@ window.SHOWROOM = {
   const ICON_REPLAY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>';
   const VIEWPORTS = [["Desktop", "100%"], ["Tablet", "820px"], ["Mobile", "390px"]];
   const FONTS_HTML = [...document.head.querySelectorAll('link[rel="stylesheet"], link[rel="preconnect"], #project-fonts')].map(el => el.outerHTML).join("");
+  const ICON_PLAY = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.6-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z"/></svg>';
+  const ICON_PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="4" width="5" height="16" rx="1.5"/><rect x="14" y="4" width="5" height="16" rx="1.5"/></svg>';
+  const SPEEDS = [0.1, 0.25, 0.5, 1];
   const BADGE_LABEL = { recommended: "Recommended", bold: "Bold", simulated: "Simulated" };
 
   // state.picks[sectionId][variantId or "_"] = option n
@@ -383,6 +425,7 @@ window.SHOWROOM = {
     const frame = h("iframe", { class: "sr-frame", title: `${sec.label} preview` });
     stage.append(frame);
     let resizeObs = null;
+    const playback = createPlayback(() => renderStage());
     const nowEl = h("span", { class: "sr-now" });
     const flags = h("div", { class: "sr-flags" });
     let cleanup = null;
@@ -455,6 +498,7 @@ window.SHOWROOM = {
     function renderStage() {
       if (typeof cleanup === "function") { try { cleanup(); } catch (err) { console.error(err); } }
       cleanup = null;
+      playback.detach();
       const vId = state.view[sec.id].variant;
       const o = findOpt(sec, state.picks[sec.id][vId]);
       const st = sec.stage || {};
@@ -462,25 +506,35 @@ window.SHOWROOM = {
       stage.style.minHeight = (st.minHeight || 240) + "px";
       const toggleClasses = Object.keys(state.toggles).filter(k => state.toggles[k]).map(k => "t-" + k).join(" ");
       const markup = o.template ? (document.getElementById(o.template)?.innerHTML ?? "") : (o.html || "");
+      const scrollH = st.scroll ? (typeof st.scroll === "number" ? st.scroll : 560) : 0;
+      const libs = [...(S.libs || []), ...(sec.libs || []), ...(o.libs || [])].map(src => `<script src="${src}"><\/script>`).join("");
       resizeObs?.disconnect();
-      frame.style.height = (st.minHeight || 240) + "px";
+      frame.classList.toggle("is-scroll", !!scrollH);
+      frame.style.height = (scrollH || st.minHeight || 240) + "px";
       frame.onload = () => {
         const doc = frame.contentDocument, win = frame.contentWindow;
-        const fit = () => { frame.style.height = Math.max(st.minHeight || 240, doc.documentElement.scrollHeight) + "px"; };
-        fit();
-        resizeObs = new ResizeObserver(fit);
-        resizeObs.observe(doc.body);
-        if (typeof o.script === "function") {
-          try { cleanup = o.script(doc.querySelector(".sr-root"), { variant: vId, toggles: { ...state.toggles }, reducedMotion: reduced.matches, document: doc, window: win }); }
-          catch (err) { console.error(`[showroom] ${optId(sec, o)} script failed`, err); }
+        if (!scrollH) {
+          const fit = () => { frame.style.height = Math.max(st.minHeight || 240, doc.documentElement.scrollHeight) + "px"; };
+          fit();
+          resizeObs = new ResizeObserver(fit);
+          resizeObs.observe(doc.body);
         }
+        let adapter = null;
+        if (typeof o.script === "function") {
+          try {
+            const r = normalizeScriptResult(o.script(doc.querySelector(".sr-root"), { variant: vId, toggles: { ...state.toggles }, reducedMotion: reduced.matches, document: doc, window: win }));
+            cleanup = r.cleanup;
+            adapter = r.adapter;
+          } catch (err) { console.error(`[showroom] ${optId(sec, o)} script failed`, err); }
+        }
+        playback.attach(doc, win, adapter);
       };
       frame.srcdoc = `<!doctype html><html class="${toggleClasses}" data-variant="${vId}"><head><meta charset="utf-8">` +
-        `<meta name="viewport" content="width=device-width, initial-scale=1"><base href="${location.href}">${FONTS_HTML}` +
+        `<meta name="viewport" content="width=device-width, initial-scale=1"><base href="${location.href}">${FONTS_HTML}${libs}` +
         `<style>html{background:${st.background || "#fff"}}body{margin:0;padding:${st.padding || 0}}\n${S.projectCss || ""}\n${sec.css || ""}\n${o.css || ""}</style>` +
         `</head><body><div class="sr-root" data-variant="${vId}">${markup}</div></body></html>`;
       nowEl.replaceChildren(h("b", {}, optId(sec, o)), o.title);
-      flags.replaceChildren(...[...(sec.simulated || []), o.simulated, o.reducedMotion && `Reduced motion: ${o.reducedMotion}`]
+      flags.replaceChildren(...[scrollH && "Scroll inside the preview to see scroll-linked motion", ...(sec.simulated || []), o.simulated, o.reducedMotion && `Reduced motion: ${o.reducedMotion}`]
         .filter(Boolean).map(t => h("span", { class: "sr-flag" }, t)));
     }
     renderers.push(renderStage);
@@ -492,12 +546,151 @@ window.SHOWROOM = {
         h("div", { class: "sr-pane" },
           h("div", { class: "sr-pane-bar" }, nowEl, h("span", { class: "sr-spacer" }), varSeg, vpSeg, replayBtn),
           h("div", { class: "sr-stage-wrap" }, stage),
+          playback.el,
           flags))));
 
     renderList();
     applyViewport();
     renderStage();
   });
+
+  // Turns whatever a script returned into { cleanup, adapter }. A GSAP timeline/tween is wrapped.
+  function normalizeScriptResult(r) {
+    if (!r) return { cleanup: null, adapter: null };
+    if (typeof r === "function") return { cleanup: r, adapter: null };
+    if (typeof r.timeScale === "function" && typeof r.time === "function") {
+      return { cleanup: () => r.kill?.(), adapter: {
+        duration: (r.totalDuration?.() ?? r.duration()) * 1000,
+        seek: ms => r.time(ms / 1000, false), play: () => r.play(), pause: () => r.pause(), setRate: x => r.timeScale(x) } };
+    }
+    return { cleanup: r.cleanup ? () => r.cleanup() : null, adapter: r };
+  }
+
+  // Playback bar: drives every CSS animation, CSS transition and Web Animation in the preview frame
+  // (plus a script adapter and the GSAP global timeline when present) on one shared clock.
+  function createPlayback(onReplay) {
+    const s = { doc: null, win: null, adapter: null, timeline: new Map(), seen: new WeakSet(),
+      t: 0, total: 0, infinite: false, playing: true, ended: false, rate: 1, loop: false,
+      last: 0, raf: 0, attachedAt: 0, loopTimer: 0 };
+
+    const playBtn = h("button", { type: "button", class: "sr-iconbtn sr-press", "aria-label": "Pause", onclick: () => s.playing ? pause() : play() });
+    const scrub = h("input", { type: "range", class: "sr-scrub", min: "0", max: "1000", step: "1", value: "0", "aria-label": "Scrub through the animation" });
+    const time = h("span", { class: "sr-time" }, "–");
+    const speedSeg = h("div", { class: "sr-seg sm", role: "group", "aria-label": "Speed" },
+      SPEEDS.map(r => h("button", { type: "button", class: "sr-press", "data-r": r, onclick: () => setRate(r) }, r + "×")));
+    const loopBtn = h("button", { type: "button", class: "sr-toggle sr-loop sr-press", role: "switch", "aria-checked": "false",
+      onclick: () => { s.loop = !s.loop; loopBtn.setAttribute("aria-checked", String(s.loop)); if (s.loop && s.ended) onReplay(); } },
+      h("span", { class: "sr-switch", "aria-hidden": "true" }), "Loop");
+    const el = h("div", { class: "sr-play is-idle" }, playBtn, scrub, time, speedSeg, loopBtn);
+    scrub.addEventListener("input", () => { if (s.playing) pause(); seek(+scrub.value / 1000 * s.total); });
+
+    const docAnims = () => s.doc ? s.doc.getAnimations() : [];
+    const fmt = ms => (ms / 1000).toFixed(2) + "s";
+    const gsapTL = () => s.win?.gsap?.globalTimeline;
+
+    function discover() {
+      const now = performance.now();
+      for (const a of docAnims()) {
+        if (s.seen.has(a)) continue;
+        s.seen.add(a);
+        a.playbackRate = s.rate;
+        if (!s.playing) a.pause();
+        // Only time-based motion that starts in the first moments joins the scrubbable timeline;
+        // later ones (hover, focus) still follow speed. Scroll-linked ones are left alone.
+        if (a.timeline === s.doc.timeline && now - s.attachedAt < 1500 && s.playing) {
+          const offset = s.t - (a.currentTime || 0);
+          s.timeline.set(a, offset);
+          const end = a.effect?.getComputedTiming().endTime;
+          if (Number.isFinite(end)) s.total = Math.max(s.total, offset + end);
+          else { s.infinite = true; const tm = a.effect.getComputedTiming(); s.total = Math.max(s.total, offset + (tm.delay || 0) + (tm.duration || 0)); }
+        }
+      }
+      if (s.adapter?.duration) s.total = Math.max(s.total, s.adapter.duration);
+      el.classList.toggle("is-idle", !(s.total > 0));
+    }
+
+    function tick(ts) {
+      const dt = s.last ? ts - s.last : 0;
+      s.last = ts;
+      if (s.playing) s.t += dt * s.rate;
+      discover();
+      if (s.playing && s.total > 0 && !s.infinite && s.t >= s.total) {
+        s.t = s.total;
+        pause();
+        s.ended = true;
+        syncButton();
+        if (s.loop) s.loopTimer = setTimeout(onReplay, 450);
+      }
+      const shown = s.infinite && s.total ? s.t % s.total : Math.min(s.t, s.total);
+      if (s.total > 0 && document.activeElement !== scrub) {
+        scrub.value = String(Math.round(shown / s.total * 1000));
+        scrub.style.setProperty("--p", (shown / s.total * 100) + "%");
+      }
+      time.textContent = s.total > 0 ? `${fmt(shown)} / ${fmt(s.total)}${s.infinite ? " ∞" : ""}` : "No timed motion";
+      s.raf = requestAnimationFrame(tick);
+    }
+
+    function syncButton() {
+      playBtn.innerHTML = s.playing ? ICON_PAUSE : ICON_PLAY;
+      playBtn.setAttribute("aria-label", s.playing ? "Pause" : s.ended ? "Play again" : "Play");
+    }
+
+    function pause() {
+      s.playing = false;
+      docAnims().forEach(a => a.pause());
+      s.timeline.forEach((_, a) => a.pause());
+      s.adapter?.pause?.();
+      gsapTL()?.pause();
+      syncButton();
+    }
+
+    function play() {
+      if (s.ended || (!s.infinite && s.total > 0 && s.t >= s.total)) { onReplay(); return; }
+      s.playing = true;
+      s.timeline.forEach((_, a) => { if (a.playState === "paused") a.play(); });
+      docAnims().forEach(a => { if (a.playState === "paused") a.play(); });
+      s.adapter?.play?.();
+      gsapTL()?.resume();
+      syncButton();
+    }
+
+    function seek(t) {
+      s.t = Math.max(0, Math.min(t, s.total));
+      s.ended = false;
+      s.timeline.forEach((offset, a) => { try { a.currentTime = Math.max(0, s.t - offset); } catch (e) {} });
+      s.adapter?.seek?.(s.t);
+      scrub.style.setProperty("--p", (s.total ? s.t / s.total * 100 : 0) + "%");
+      syncButton();
+    }
+
+    function setRate(r) {
+      s.rate = r;
+      speedSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.r === r)));
+      docAnims().forEach(a => { a.playbackRate = r; });
+      s.timeline.forEach((_, a) => { a.playbackRate = r; });
+      s.adapter?.setRate?.(r);
+      gsapTL()?.timeScale(r);
+    }
+
+    function attach(doc, win, adapter) {
+      detach();
+      Object.assign(s, { doc, win, adapter, timeline: new Map(), seen: new WeakSet(), t: 0, total: 0,
+        infinite: false, playing: true, ended: false, last: 0, attachedAt: performance.now() });
+      if (s.rate !== 1) { adapter?.setRate?.(s.rate); gsapTL()?.timeScale(s.rate); }
+      syncButton();
+      s.raf = requestAnimationFrame(tick);
+    }
+
+    function detach() {
+      cancelAnimationFrame(s.raf);
+      clearTimeout(s.loopTimer);
+      s.doc = s.win = s.adapter = null;
+    }
+
+    setRate(1);
+    syncButton();
+    return { el, attach, detach };
+  }
 
   function spin(btn) { btn.classList.remove("spin"); void btn.offsetWidth; btn.classList.add("spin"); }
 
