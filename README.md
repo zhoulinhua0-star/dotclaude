@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Personal Claude Code plugins for planning and working with Claude.
+Personal Claude Code plugins for planning, designing and working with Claude.
 
 These plugins are built for [Claude Code](https://code.claude.com/docs) only. They rely on Claude Code-specific features, such as plugin skills and the `AskUserQuestion` tool, and are not designed for other agents or for the Claude apps.
 
@@ -11,6 +11,7 @@ These plugins are built for [Claude Code](https://code.claude.com/docs) only. Th
 | Plugin | Skill / command | What it does |
 | --- | --- | --- |
 | `workflow` | `/workflow:ask-first` | Asks focused clarifying questions with a recommended answer for each, then drafts a plan for approval before any code is written. |
+| `design` | `/design:showroom` | Builds a live, clickable preview of design, copy and motion options for one part of your UI, then gives you a button that copies your pick as an exact implementation instruction. Nothing is implemented. |
 
 ## Requirements
 
@@ -26,6 +27,7 @@ Run these inside a Claude Code session:
 ```text
 /plugin marketplace add zhoulinhua0-star/dotclaude
 /plugin install workflow@dotclaude
+/plugin install design@dotclaude
 ```
 
 In a session, `/plugin install` opens the plugin's details. Choose an install scope there to finish. To install from your shell instead:
@@ -33,6 +35,7 @@ In a session, `/plugin install` opens the plugin's details. Choose an install sc
 ```bash
 claude plugin marketplace add zhoulinhua0-star/dotclaude
 claude plugin install workflow@dotclaude
+claude plugin install design@dotclaude
 ```
 
 ### From a local clone (for development)
@@ -42,6 +45,7 @@ git clone https://github.com/zhoulinhua0-star/dotclaude.git
 cd dotclaude
 claude plugin marketplace add ./
 claude plugin install workflow@dotclaude
+claude plugin install design@dotclaude
 ```
 
 A marketplace added from a local path loads its plugins in place, so your edits take effect at the next session start, or immediately after running `/reload-plugins` in a session.
@@ -98,6 +102,25 @@ What happens next:
 
 The skill runs only when you invoke it. Claude never starts it on its own.
 
+## Using `showroom`
+
+Name the part of the UI you want options for, optionally with a screenshot:
+
+```text
+/design:showroom the pricing cards' hover and the "Most popular" badge
+```
+
+Claude also uses it on its own when you ask to "give me options", "show me some variants" or "let me pick" for a UI part, animation or transition.
+
+What happens:
+
+1. Claude reads the real component, styles, copy and assets for that part. It doesn't change any project files.
+2. It designs about 4–6 distinct options plus the current version as option 0. It marks one **Recommended**, flags copy that overclaims, motion that's heavier on low-end devices, and anything simulated. One or two **Bold** options may break from the site's current look.
+3. It builds a single preview page in the session scratchpad, serves it on `localhost` and opens it in Chrome. Click an option to see it live. Replay animations, switch between desktop, tablet and mobile widths, and toggle the part's modes if it has any.
+4. Press **Copy my choice** at the bottom and paste the result into Claude Code. It names exact option IDs and copy, so implementation needs no memory of the preview.
+
+Browser checks work best with the [Claude in Chrome](https://code.claude.com/docs/en/chrome) extension. Without it, Claude gives you the URL to open yourself.
+
 ## How `ask-first` works
 
 - **Research first.** Claude reads the relevant code before asking, so it doesn't ask what the code already answers. When a question depends on the current state, it cites what it found. Research is kept proportionate to the task, and if the task is too vague to know where to look, Claude asks about scope first.
@@ -121,12 +144,19 @@ dotclaude/
 ├── .claude-plugin/
 │   └── marketplace.json        # marketplace "dotclaude", lists each plugin
 ├── plugins/
-│   └── workflow/
+│   ├── workflow/
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json     # plugin manifest: name, description, author, license
+│   │   └── skills/
+│   │       └── ask-first/
+│   │           └── SKILL.md    # the ask-first skill
+│   └── design/
 │       ├── .claude-plugin/
-│       │   └── plugin.json     # plugin manifest: name, description, author, license
+│       │   └── plugin.json
 │       └── skills/
-│           └── ask-first/
-│               └── SKILL.md    # the ask-first skill
+│           └── showroom/
+│               ├── SKILL.md       # the showroom skill
+│               └── template.html  # preview page scaffold the skill fills in
 ├── README.md
 ├── LICENSE
 └── .gitignore

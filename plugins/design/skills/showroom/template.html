@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Showroom · __PART_NAME__</title>
+
+<!--
+  SHOWROOM TEMPLATE
+  Fill in only the marked slots; leave the showroom chrome alone.
+    1. FONTS   - @font-face rules / font <link>s the project uses. Every <link> and the
+                 #project-fonts style in <head> are copied into each preview frame.
+    2. ASSETS  - copy images, icons and fonts next to this file and reference them
+                 with relative paths (e.g. "assets/hero.jpg").
+    3. DATA    - window.SHOWROOM near the bottom: sections, options, CSS and copy text.
+  Each preview renders in its own iframe, so the project's CSS can be pasted as-is
+  (:root tokens, body styles, @media breakpoints all behave as on the real site).
+  Option markup can be a string (`html`) or a <template id="..."> (`template`),
+  which is easier for long markup. Templates go in slot 3b.
+-->
+
+<!-- ============ SLOT 1: PROJECT FONTS ============ -->
+<style id="project-fonts">
+  /* @font-face { font-family: "Brand"; src: url("assets/brand.woff2") format("woff2"); } */
+</style>
+<!-- ============ /SLOT 1 ============ -->
+
+<style>
+  /* ---------- Showroom chrome. Do not restyle per project. ---------- */
+  :root {
+    --sr-bg: #f4f3f1;
+    --sr-panel: #ffffff;
+    --sr-ink: #17171a;
+    --sr-ink-2: #5d5d66;
+    --sr-ink-3: #8d8d96;
+    --sr-line: rgba(23, 23, 26, 0.09);
+    --sr-line-2: rgba(23, 23, 26, 0.16);
+    --sr-accent: #3b5bfd;
+    --sr-accent-soft: rgba(59, 91, 253, 0.1);
+    --sr-good: #16a36b;
+    --sr-warn: #c27803;
+    --sr-bad: #d1403a;
+    --sr-bold: #9b3df5;
+    --sr-radius: 14px;
+    --sr-shadow: 0 1px 2px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.05);
+    --sr-shadow-lift: 0 2px 4px rgba(0,0,0,.05), 0 10px 28px rgba(0,0,0,.09);
+    --sr-ease: cubic-bezier(.2, .8, .2, 1);
+    --sr-press: cubic-bezier(.3, 0, .5, 1);
+    --sr-font: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+    --sr-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font: 14px/1.45 var(--sr-font);
+    color: var(--sr-ink);
+    background: var(--sr-bg);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Shared press feel for every showroom control */
+  .sr-press {
+    transition: transform .16s var(--sr-ease), box-shadow .2s var(--sr-ease),
+                background-color .16s var(--sr-ease), border-color .16s var(--sr-ease),
+                color .16s var(--sr-ease), opacity .16s var(--sr-ease);
+    -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+  }
+  .sr-press:active { transform: scale(.97); transition-duration: .07s; transition-timing-function: var(--sr-press); }
+  .sr-press:focus-visible { outline: 2px solid var(--sr-accent); outline-offset: 2px; }
+
+  /* Top bar */
+  .sr-top {
+    position: sticky; top: 0; z-index: 50;
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    padding: 10px 20px;
+    background: rgba(244, 243, 241, .82);
+    backdrop-filter: saturate(1.4) blur(14px);
+    -webkit-backdrop-filter: saturate(1.4) blur(14px);
+    border-bottom: 1px solid var(--sr-line);
+  }
+  .sr-pill {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 5px 11px; border-radius: 999px;
+    background: var(--sr-ink); color: #fff;
+    font-size: 12px; font-weight: 600; letter-spacing: .01em; white-space: nowrap;
+  }
+  .sr-pill i { width: 7px; height: 7px; border-radius: 50%; background: #ffcf4a; box-shadow: 0 0 0 3px rgba(255,207,74,.25); }
+  .sr-title { font-weight: 650; font-size: 15px; white-space: nowrap; }
+  .sr-sel { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
+  .sr-chip {
+    display: inline-flex; gap: 6px; align-items: center;
+    padding: 4px 10px; border-radius: 999px;
+    background: var(--sr-panel); border: 1px solid var(--sr-line);
+    font-size: 12px; color: var(--sr-ink-2); white-space: nowrap;
+  }
+  .sr-chip b { color: var(--sr-ink); font-family: var(--sr-mono); font-size: 11.5px; }
+  .sr-chip.is-changed { border-color: var(--sr-accent); background: var(--sr-accent-soft); }
+  .sr-jump { border: 0; background: var(--sr-accent); color: #fff; font: inherit; font-weight: 600; font-size: 12.5px; padding: 6px 12px; border-radius: 999px; }
+  .sr-jump:hover { box-shadow: 0 4px 14px rgba(59,91,253,.35); transform: translateY(-1px); }
+
+  main { max-width: 1680px; margin: 0 auto; padding: 22px 20px 40px; }
+  .sr-intro { color: var(--sr-ink-2); margin: 0 0 18px; max-width: 900px; }
+  .sr-intro:empty { display: none; }
+
+  /* Section */
+  .sr-section { margin: 0 0 34px; }
+  .sr-section-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin: 0 0 12px; }
+  .sr-section-head h2 { margin: 0; font-size: 19px; letter-spacing: -.01em; }
+  .sr-section-head p { margin: 0; color: var(--sr-ink-2); }
+  .sr-grid { display: grid; grid-template-columns: minmax(300px, 380px) minmax(0, 1fr); gap: 18px; align-items: start; }
+  @media (max-width: 980px) { .sr-grid { grid-template-columns: minmax(0, 1fr); } }
+
+  /* Segmented control (variants, viewport) */
+  .sr-seg { display: inline-flex; padding: 3px; gap: 2px; background: rgba(23,23,26,.06); border-radius: 10px; }
+  .sr-seg button {
+    border: 0; background: transparent; font: inherit; font-size: 12.5px; font-weight: 550;
+    color: var(--sr-ink-2); padding: 6px 12px; border-radius: 8px;
+  }
+  .sr-seg button:hover { color: var(--sr-ink); background: rgba(255,255,255,.5); }
+  .sr-seg button[aria-pressed="true"] { background: var(--sr-panel); color: var(--sr-ink); box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 2px 6px rgba(0,0,0,.05); }
+
+  /* Option list */
+  .sr-list { display: flex; flex-direction: column; gap: 8px; position: sticky; top: 64px; max-height: calc(100vh - 80px); overflow: auto; padding: 2px 4px 8px 2px; }
+  @media (max-width: 980px) { .sr-list { position: static; max-height: none; } }
+  .sr-card {
+    position: relative; text-align: left; width: 100%;
+    font: inherit; color: inherit;
+    padding: 12px 14px;
+    background: var(--sr-panel);
+    border: 1px solid var(--sr-line);
+    border-radius: var(--sr-radius);
+    box-shadow: 0 1px 1px rgba(0,0,0,.02);
+  }
+  .sr-card:hover { border-color: var(--sr-line-2); box-shadow: var(--sr-shadow-lift); transform: translateY(-1px); }
+  .sr-card:active { transform: translateY(0) scale(.985); }
+  .sr-card[aria-checked="true"] {
+    border-color: var(--sr-accent);
+    box-shadow: 0 0 0 3px var(--sr-accent-soft), var(--sr-shadow);
+  }
+  .sr-card-top { display: flex; align-items: center; gap: 8px; }
+  .sr-id {
+    font-family: var(--sr-mono); font-size: 11.5px; font-weight: 700;
+    padding: 2px 6px; border-radius: 6px; background: rgba(23,23,26,.06); color: var(--sr-ink-2);
+    transition: background-color .16s var(--sr-ease), color .16s var(--sr-ease);
+  }
+  .sr-card[aria-checked="true"] .sr-id { background: var(--sr-accent); color: #fff; }
+  .sr-card h3 { margin: 0; font-size: 14px; font-weight: 620; flex: 1; }
+  .sr-radio {
+    width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--sr-line-2); flex: none;
+    display: grid; place-items: center; transition: border-color .16s var(--sr-ease);
+  }
+  .sr-radio::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--sr-accent); transform: scale(0); transition: transform .22s var(--sr-ease); }
+  .sr-card[aria-checked="true"] .sr-radio { border-color: var(--sr-accent); }
+  .sr-card[aria-checked="true"] .sr-radio::after { transform: scale(1); }
+  .sr-why { margin: 5px 0 0; color: var(--sr-ink-2); font-size: 13px; }
+  .sr-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+  .sr-badges:empty { display: none; }
+  .sr-badge { font-size: 11px; font-weight: 650; padding: 2px 7px; border-radius: 6px; letter-spacing: .01em; }
+  .sr-badge.recommended { background: rgba(22,163,107,.12); color: var(--sr-good); }
+  .sr-badge.bold { background: rgba(155,61,245,.12); color: var(--sr-bold); }
+  .sr-badge.overclaims { background: rgba(209,64,58,.12); color: var(--sr-bad); }
+  .sr-badge.heavy { background: rgba(194,120,3,.13); color: var(--sr-warn); }
+  .sr-badge.simulated, .sr-badge.current { background: rgba(23,23,26,.07); color: var(--sr-ink-2); }
+  .sr-note { margin: 6px 0 0; font-size: 12px; color: var(--sr-ink-3); }
+  .sr-note b { font-weight: 650; }
+  .sr-note.bad b { color: var(--sr-bad); }
+  .sr-note.warn b { color: var(--sr-warn); }
+  .sr-note.good b { color: var(--sr-good); }
+
+  /* Toggles */
+  .sr-toggles { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; padding-top: 10px; border-top: 1px dashed var(--sr-line-2); }
+  .sr-toggle { display: flex; align-items: center; gap: 10px; border: 0; background: transparent; font: inherit; color: var(--sr-ink); padding: 6px 4px; border-radius: 8px; text-align: left; }
+  .sr-toggle:hover { background: rgba(23,23,26,.04); }
+  .sr-switch { width: 32px; height: 19px; border-radius: 999px; background: rgba(23,23,26,.18); position: relative; flex: none; transition: background-color .2s var(--sr-ease); }
+  .sr-switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 15px; height: 15px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .24s var(--sr-ease); }
+  .sr-toggle[aria-checked="true"] .sr-switch { background: var(--sr-accent); }
+  .sr-toggle[aria-checked="true"] .sr-switch::after { transform: translateX(13px); }
+  .sr-toggle small { display: block; color: var(--sr-ink-3); font-size: 12px; }
+
+  /* Preview pane */
+  .sr-pane { background: var(--sr-panel); border: 1px solid var(--sr-line); border-radius: calc(var(--sr-radius) + 4px); box-shadow: var(--sr-shadow); overflow: hidden; }
+  .sr-pane-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border-bottom: 1px solid var(--sr-line); }
+  .sr-pane-bar .sr-now { font-weight: 620; }
+  .sr-pane-bar .sr-now b { font-family: var(--sr-mono); color: var(--sr-accent); margin-right: 6px; }
+  .sr-spacer { flex: 1; }
+  .sr-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    border: 1px solid var(--sr-line-2); background: var(--sr-panel); color: var(--sr-ink);
+    font: inherit; font-size: 12.5px; font-weight: 600; padding: 6px 12px; border-radius: 9px;
+  }
+  .sr-btn:hover { background: #fafafa; border-color: rgba(23,23,26,.24); box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  .sr-btn svg { width: 14px; height: 14px; }
+  .sr-btn.spin svg { animation: sr-spin .55s var(--sr-ease); }
+  @keyframes sr-spin { to { transform: rotate(-360deg); } }
+  .sr-stage-wrap { background: repeating-conic-gradient(rgba(23,23,26,.035) 0 25%, transparent 0 50%) 0 0 / 18px 18px; display: flex; justify-content: center; }
+  .sr-stage { width: 100%; transition: max-width .35s var(--sr-ease); background: #fff; overflow: hidden; }
+  .sr-frame { display: block; width: 100%; border: 0; background: transparent; }
+  .sr-flags { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 8px 12px; border-top: 1px solid var(--sr-line); background: #fbfbfa; }
+  .sr-flags:empty { display: none; }
+  .sr-flag { font-size: 12px; color: var(--sr-ink-2); }
+  .sr-flag::before { content: "◌ "; color: var(--sr-ink-3); }
+
+  /* Copy panel */
+  .sr-copy { margin: 10px 0 0; background: var(--sr-ink); color: #fff; border-radius: 22px; padding: 26px; display: grid; grid-template-columns: 1fr auto; gap: 18px 24px; align-items: center; }
+  @media (max-width: 800px) { .sr-copy { grid-template-columns: 1fr; } }
+  .sr-copy h2 { margin: 0 0 4px; font-size: 20px; letter-spacing: -.01em; }
+  .sr-copy p { margin: 0; color: rgba(255,255,255,.65); }
+  .sr-copy pre {
+    grid-column: 1 / -1; margin: 0; padding: 14px 16px; border-radius: 12px;
+    background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+    font: 12.5px/1.55 var(--sr-mono); color: rgba(255,255,255,.88);
+    white-space: pre-wrap; word-break: break-word; max-height: 300px; overflow: auto;
+  }
+  .sr-copy textarea {
+    grid-column: 1 / -1; width: 100%; min-height: 200px; padding: 14px; border-radius: 12px;
+    font: 12.5px/1.55 var(--sr-mono); border: 2px solid #ffcf4a; background: #fff; color: var(--sr-ink);
+  }
+  .sr-copybtn {
+    position: relative; overflow: hidden;
+    border: 0; border-radius: 16px; padding: 18px 30px; min-width: 240px;
+    background: #fff; color: var(--sr-ink);
+    font: inherit; font-size: 17px; font-weight: 700; letter-spacing: -.01em;
+    box-shadow: 0 1px 0 rgba(255,255,255,.4) inset, 0 8px 24px rgba(0,0,0,.35);
+  }
+  .sr-copybtn:hover { transform: translateY(-2px); box-shadow: 0 1px 0 rgba(255,255,255,.4) inset, 0 14px 34px rgba(0,0,0,.45); }
+  .sr-copybtn:active { transform: translateY(0) scale(.96); }
+  .sr-copybtn .lbl { display: inline-flex; align-items: center; justify-content: center; gap: 10px; transition: transform .32s var(--sr-ease), opacity .2s var(--sr-ease); }
+  .sr-copybtn .done { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 8px; color: #fff; background: var(--sr-good); transform: translateY(100%); transition: transform .34s var(--sr-ease); }
+  .sr-copybtn.copied .lbl { transform: translateY(-120%); opacity: 0; }
+  .sr-copybtn.copied .done { transform: translateY(0); }
+  .sr-copybtn .done svg { width: 20px; height: 20px; stroke-dasharray: 24; stroke-dashoffset: 24; transition: stroke-dashoffset .35s .12s var(--sr-ease); }
+  .sr-copybtn.copied .done svg { stroke-dashoffset: 0; }
+  .sr-fallback-note { grid-column: 1 / -1; color: #ffcf4a !important; font-weight: 600; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sr-press, .sr-card, .sr-switch::after, .sr-radio::after, .sr-copybtn .lbl, .sr-copybtn .done, .sr-copybtn .done svg, .sr-stage { transition-duration: .01ms !important; }
+    .sr-btn.spin svg { animation: none; }
+    .sr-press:active, .sr-card:active, .sr-copybtn:active, .sr-card:hover, .sr-copybtn:hover { transform: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="sr-top">
+  <span class="sr-pill"><i></i>Preview only · nothing implemented</span>
+  <span class="sr-title" id="sr-title"></span>
+  <div class="sr-sel" id="sr-sel" aria-live="polite"></div>
+  <button class="sr-jump sr-press" id="sr-jump" type="button">Copy my choice ↓</button>
+</header>
+
+<main>
+  <p class="sr-intro" id="sr-intro"></p>
+  <div id="sr-sections"></div>
+
+  <section class="sr-copy" id="sr-copy">
+    <div>
+      <h2>Happy with your picks?</h2>
+      <p>Copy this and paste it into Claude Code. It names exact option IDs and copy, so it stands on its own.</p>
+    </div>
+    <button class="sr-copybtn sr-press" id="sr-copybtn" type="button">
+      <span class="lbl">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>
+        Copy my choice
+      </span>
+      <span class="done" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+        Copied
+      </span>
+    </button>
+    <pre id="sr-out"></pre>
+  </section>
+</main>
+
+<!-- ============ SLOT 3b: OPTION TEMPLATES (optional) ============ -->
+<!-- <template id="tpl-A1"> ...markup for option A1... </template> -->
+<!-- ============ /SLOT 3b ============ -->
+
+<!-- ============ SLOT 3: SHOWROOM DATA ============ -->
+<script>
+window.SHOWROOM = {
+  part: "__PART_NAME__",               // what the user asked about, e.g. "Home hero"
+  date: "__YYYY-MM-DD__",
+  intro: "",                            // optional line: what's explored, anything simulated overall
+  filesToChange: [                      // real repo paths found while reading the code
+    // "src/components/Hero.tsx", "src/app/globals.css"
+  ],
+  // CSS shared by every preview: the project's real tokens and base styles, copied from the repo.
+  // Paste it as it is in the repo: :root, body and @media rules work unchanged.
+  projectCss: `
+    /* :root { --brand: #...; } body { font-family: "Brand", sans-serif; } */
+  `,
+  // Optional toggles. When on, the preview's <html> gets class "t-<id>" (style with html.t-<id> ...)
+  // and the copied text records it.
+  toggles: [
+    // { id: "subtitle", label: "Also change the subtitle", hint: "Uses each option's subtitle", default: false }
+  ],
+  sections: [
+    {
+      id: "main",                       // stable key
+      label: "__SECTION_LABEL__",       // shown in headings and in the copied text
+      blurb: "",                        // optional line under the heading
+      idPrefix: "A",                    // option IDs become A0, A1, A2...
+      // Optional variants: modes the real UI has. Each variant gets its own pick.
+      variants: [
+        // { id: "biz", label: "For businesses" }, { id: "consumer", label: "For consumers" }
+      ],
+      css: ``,                          // CSS shared by this section's options (copied from the real component)
+      stage: { background: "#fff", minHeight: 360, padding: "0" },
+      simulated: [],                    // section-wide notes, e.g. "Nav bar omitted"
+      options: [
+        {
+          n: 0,                         // 0 is always the current version
+          title: "Current",
+          why: "What ships today, for comparison.",
+          // variant: "biz",            // set when the option belongs to one variant only
+          html: `<!-- real current markup -->`,   // or template: "tpl-A0"
+          css: ``,                      // option-only CSS; scoped automatically
+          // script(root, ctx) { ...; return () => cleanup },  // optional JS motion; re-runs on Replay.
+          //   ctx = { variant, toggles, reducedMotion, document, window } of the preview frame
+          pick: "",                     // exact copy, or one line describing the design/motion; goes into the copied text
+          badges: [],                   // any of: "recommended", "bold", "simulated"
+          recommendedWhy: "",           // one sentence, with "recommended"
+          overclaims: "",               // one-line reason => "Overclaims" badge
+          heavy: "",                    // one-line reason => "Heavier on low-end" badge
+          simulated: "",                // note shown under the preview
+          reducedMotion: ""             // what it does under prefers-reduced-motion
+        }
+      ]
+    }
+  ]
+};
+</script>
+<!-- ============ /SLOT 3 ============ -->
+
+<script>
+(() => {
+  const S = window.SHOWROOM;
+  const $ = (sel, el = document) => el.querySelector(sel);
+  const h = (tag, attrs = {}, ...kids) => {
+    const el = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      if (v == null || v === false) continue;
+      if (k === "class") el.className = v;
+      else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v === true ? "" : v);
+    }
+    for (const kid of kids.flat()) if (kid != null && kid !== false && kid !== "") el.append(kid);
+    return el;
+  };
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)");
+  const ICON_REPLAY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>';
+  const VIEWPORTS = [["Desktop", "100%"], ["Tablet", "820px"], ["Mobile", "390px"]];
+  const FONTS_HTML = [...document.head.querySelectorAll('link[rel="stylesheet"], link[rel="preconnect"], #project-fonts')].map(el => el.outerHTML).join("");
+  const BADGE_LABEL = { recommended: "Recommended", bold: "Bold", simulated: "Simulated" };
+
+  // state.picks[sectionId][variantId or "_"] = option n
+  const state = { picks: {}, toggles: {}, view: {} };
+  (S.toggles || []).forEach(t => state.toggles[t.id] = !!t.default);
+
+  const optId = (sec, o) => (sec.idPrefix || "") + o.n;
+  const variantsOf = sec => (sec.variants && sec.variants.length ? sec.variants : [{ id: "_", label: "" }]);
+  const optionsFor = (sec, vId) => sec.options.filter(o => !o.variant || vId === "_" || o.variant === vId);
+  const findOpt = (sec, n) => sec.options.find(o => o.n === n);
+
+  document.title = `Showroom · ${S.part}`;
+  $("#sr-title").textContent = S.part;
+  $("#sr-intro").textContent = S.intro || "";
+  $("#sr-jump").addEventListener("click", () =>
+    $("#sr-copy").scrollIntoView({ behavior: reduced.matches ? "auto" : "smooth" }));
+
+  const root = $("#sr-sections");
+  const renderers = [];
+
+  S.sections.forEach((sec, secIndex) => {
+    const vars = variantsOf(sec);
+    state.picks[sec.id] = {};
+    vars.forEach(v => state.picks[sec.id][v.id] = 0);
+    state.view[sec.id] = { variant: vars[0].id, viewport: 0 };
+
+    const list = h("div", { class: "sr-list", role: "radiogroup", "aria-label": `${sec.label} options` });
+    const stage = h("div", { class: "sr-stage" });
+    const frame = h("iframe", { class: "sr-frame", title: `${sec.label} preview` });
+    stage.append(frame);
+    let resizeObs = null;
+    const nowEl = h("span", { class: "sr-now" });
+    const flags = h("div", { class: "sr-flags" });
+    let cleanup = null;
+
+    const varSeg = vars.length > 1 ? h("div", { class: "sr-seg", role: "group", "aria-label": "Variant" },
+      vars.map(v => h("button", { type: "button", class: "sr-press", "data-v": v.id,
+        onclick: () => { state.view[sec.id].variant = v.id; renderList(); renderStage(); } }, v.label))) : null;
+
+    const vpSeg = h("div", { class: "sr-seg", role: "group", "aria-label": "Viewport" },
+      VIEWPORTS.map(([label], i) => h("button", { type: "button", class: "sr-press", "data-i": i,
+        onclick: () => { state.view[sec.id].viewport = i; applyViewport(); } }, label)));
+
+    const replayBtn = h("button", { type: "button", class: "sr-btn sr-press", title: "Replay (R)",
+      onclick: () => { spin(replayBtn); renderStage(); } });
+    replayBtn.innerHTML = ICON_REPLAY + "Replay";
+
+    function applyViewport() {
+      const i = state.view[sec.id].viewport;
+      stage.style.maxWidth = VIEWPORTS[i][1];
+      vpSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.i === i)));
+    }
+
+    function renderList() {
+      const vId = state.view[sec.id].variant;
+      if (varSeg) varSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === vId)));
+      list.replaceChildren();
+      optionsFor(sec, vId).forEach(o => {
+        const checked = state.picks[sec.id][vId] === o.n;
+        const badges = [];
+        if (o.n === 0) badges.push(h("span", { class: "sr-badge current" }, "Current"));
+        (o.badges || []).forEach(b => badges.push(h("span", { class: `sr-badge ${b}` }, BADGE_LABEL[b] || b)));
+        if (o.overclaims) badges.push(h("span", { class: "sr-badge overclaims" }, "Overclaims"));
+        if (o.heavy) badges.push(h("span", { class: "sr-badge heavy" }, "Heavier on low-end"));
+        const notes = [];
+        if (o.recommendedWhy) notes.push(h("p", { class: "sr-note good" }, h("b", {}, "Why: "), o.recommendedWhy));
+        if (o.overclaims) notes.push(h("p", { class: "sr-note bad" }, h("b", {}, "Overclaims: "), o.overclaims));
+        if (o.heavy) notes.push(h("p", { class: "sr-note warn" }, h("b", {}, "Cost: "), o.heavy));
+        list.append(h("button", {
+          type: "button", class: "sr-card sr-press", role: "radio", "aria-checked": String(checked),
+          tabindex: checked ? "0" : "-1", "data-n": o.n,
+          onclick: () => select(o.n, true)
+        },
+          h("div", { class: "sr-card-top" }, h("span", { class: "sr-id" }, optId(sec, o)), h("h3", {}, o.title), h("span", { class: "sr-radio", "aria-hidden": "true" })),
+          o.why ? h("p", { class: "sr-why" }, o.why) : null,
+          h("div", { class: "sr-badges" }, badges),
+          notes
+        ));
+      });
+      if ((S.toggles || []).length && secIndex === 0) list.append(togglesEl());
+    }
+
+    function select(n, focus) {
+      state.picks[sec.id][state.view[sec.id].variant] = n;
+      renderList();
+      renderStage();
+      updateSummary();
+      if (focus) list.querySelector(`[data-n="${n}"]`)?.focus({ preventScroll: true });
+    }
+
+    list.addEventListener("keydown", e => {
+      if (!["ArrowDown", "ArrowUp", "ArrowRight", "ArrowLeft"].includes(e.key) || !e.target.closest(".sr-card")) return;
+      e.preventDefault();
+      const vId = state.view[sec.id].variant;
+      const opts = optionsFor(sec, vId);
+      const i = opts.findIndex(o => o.n === state.picks[sec.id][vId]);
+      const d = e.key === "ArrowDown" || e.key === "ArrowRight" ? 1 : -1;
+      select(opts[(i + d + opts.length) % opts.length].n, true);
+    });
+
+    function renderStage() {
+      if (typeof cleanup === "function") { try { cleanup(); } catch (err) { console.error(err); } }
+      cleanup = null;
+      const vId = state.view[sec.id].variant;
+      const o = findOpt(sec, state.picks[sec.id][vId]);
+      const st = sec.stage || {};
+      stage.style.background = st.background || "#fff";
+      stage.style.minHeight = (st.minHeight || 240) + "px";
+      const toggleClasses = Object.keys(state.toggles).filter(k => state.toggles[k]).map(k => "t-" + k).join(" ");
+      const markup = o.template ? (document.getElementById(o.template)?.innerHTML ?? "") : (o.html || "");
+      resizeObs?.disconnect();
+      frame.style.height = (st.minHeight || 240) + "px";
+      frame.onload = () => {
+        const doc = frame.contentDocument, win = frame.contentWindow;
+        const fit = () => { frame.style.height = Math.max(st.minHeight || 240, doc.documentElement.scrollHeight) + "px"; };
+        fit();
+        resizeObs = new ResizeObserver(fit);
+        resizeObs.observe(doc.body);
+        if (typeof o.script === "function") {
+          try { cleanup = o.script(doc.querySelector(".sr-root"), { variant: vId, toggles: { ...state.toggles }, reducedMotion: reduced.matches, document: doc, window: win }); }
+          catch (err) { console.error(`[showroom] ${optId(sec, o)} script failed`, err); }
+        }
+      };
+      frame.srcdoc = `<!doctype html><html class="${toggleClasses}" data-variant="${vId}"><head><meta charset="utf-8">` +
+        `<meta name="viewport" content="width=device-width, initial-scale=1"><base href="${location.href}">${FONTS_HTML}` +
+        `<style>html{background:${st.background || "#fff"}}body{margin:0;padding:${st.padding || 0}}\n${S.projectCss || ""}\n${sec.css || ""}\n${o.css || ""}</style>` +
+        `</head><body><div class="sr-root" data-variant="${vId}">${markup}</div></body></html>`;
+      nowEl.replaceChildren(h("b", {}, optId(sec, o)), o.title);
+      flags.replaceChildren(...[...(sec.simulated || []), o.simulated, o.reducedMotion && `Reduced motion: ${o.reducedMotion}`]
+        .filter(Boolean).map(t => h("span", { class: "sr-flag" }, t)));
+    }
+    renderers.push(renderStage);
+
+    root.append(h("section", { class: "sr-section", id: `sec-${sec.id}` },
+      h("div", { class: "sr-section-head" }, h("h2", {}, sec.label), sec.blurb ? h("p", {}, sec.blurb) : null),
+      h("div", { class: "sr-grid" },
+        list,
+        h("div", { class: "sr-pane" },
+          h("div", { class: "sr-pane-bar" }, nowEl, h("span", { class: "sr-spacer" }), varSeg, vpSeg, replayBtn),
+          h("div", { class: "sr-stage-wrap" }, stage),
+          flags))));
+
+    renderList();
+    applyViewport();
+    renderStage();
+  });
+
+  function spin(btn) { btn.classList.remove("spin"); void btn.offsetWidth; btn.classList.add("spin"); }
+
+  function togglesEl() {
+    return h("div", { class: "sr-toggles" }, S.toggles.map(t =>
+      h("button", { type: "button", class: "sr-toggle sr-press", role: "switch", "aria-checked": String(state.toggles[t.id]),
+        onclick: e => {
+          state.toggles[t.id] = !state.toggles[t.id];
+          e.currentTarget.setAttribute("aria-checked", String(state.toggles[t.id]));
+          renderers.forEach(r => r());
+          updateSummary();
+        } },
+        h("span", { class: "sr-switch", "aria-hidden": "true" }),
+        h("span", {}, t.label, t.hint ? h("small", {}, t.hint) : null))));
+  }
+
+  function choiceText() {
+    const lines = [`Implement from showroom "${S.part}" (${S.date}):`];
+    S.sections.forEach(sec => variantsOf(sec).forEach(v => {
+      const o = findOpt(sec, state.picks[sec.id][v.id]);
+      const where = v.id === "_" ? sec.label : `${sec.label} / ${v.label}`;
+      const desc = o.n === 0 ? "keep current, no change" : (o.pick || o.title);
+      lines.push(`- ${where}: ${optId(sec, o)} (${o.title}) — ${desc}`);
+    }));
+    if ((S.toggles || []).length)
+      lines.push(`- Toggles: ${S.toggles.map(t => `${t.label} = ${state.toggles[t.id] ? "on" : "off"}`).join("; ")}`);
+    if ((S.filesToChange || []).length) lines.push(`Files I expect to change: ${S.filesToChange.join(", ")}`);
+    lines.push("Implement exactly these options. The preview was a mock: reproduce its look and motion with the project's own components and styles.");
+    return lines.join("\n");
+  }
+
+  function updateSummary() {
+    $("#sr-out").textContent = choiceText();
+    $("#sr-sel").replaceChildren(...S.sections.flatMap(sec => variantsOf(sec).map(v => {
+      const n = state.picks[sec.id][v.id];
+      const label = v.id === "_" ? sec.label : `${sec.label} · ${v.label}`;
+      return h("span", { class: "sr-chip" + (n ? " is-changed" : "") }, label, h("b", {}, (sec.idPrefix || "") + n));
+    })));
+  }
+
+  const copyBtn = $("#sr-copybtn");
+  let copyTimer;
+  copyBtn.addEventListener("click", async () => {
+    const text = choiceText();
+    try {
+      if (!navigator.clipboard || !window.isSecureContext) throw new Error("clipboard unavailable");
+      await navigator.clipboard.writeText(text);
+      copyBtn.classList.add("copied");
+      copyBtn.setAttribute("aria-label", "Copied");
+      clearTimeout(copyTimer);
+      copyTimer = setTimeout(() => { copyBtn.classList.remove("copied"); copyBtn.removeAttribute("aria-label"); }, 1800);
+    } catch (err) {
+      const box = $("#sr-copy");
+      let ta = box.querySelector("textarea");
+      if (!ta) {
+        box.append(h("p", { class: "sr-fallback-note" }, "Couldn't reach the clipboard. The text below is selected: press ⌘C / Ctrl+C."));
+        ta = h("textarea", { readonly: true, "aria-label": "Your choice" });
+        box.append(ta);
+      }
+      ta.value = text;
+      ta.focus();
+      ta.select();
+    }
+  });
+
+  document.addEventListener("keydown", e => {
+    if (e.key.toLowerCase() !== "r" || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName)) return;
+    renderers.forEach(r => r());
+  });
+
+  updateSummary();
+})();
+</script>
+</body>
+</html>

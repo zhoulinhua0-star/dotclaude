@@ -1,6 +1,6 @@
 {
   "name": "dotclaude",
-  "description": "Personal Claude Code plugins for planning and working with Claude.",
+  "description": "Personal Claude Code plugins for planning, designing and working with Claude.",
   "owner": {
     "name": "Linhua Zhou",
     "url": "https://github.com/zhoulinhua0-star"
@@ -11,6 +11,12 @@
       "source": "./plugins/workflow",
       "description": "Skills that shape how Claude approaches a task, starting with ask-first: clarifying questions with recommendations, then a plan for approval.",
       "category": "productivity"
+    },
+    {
+      "name": "design",
+      "source": "./plugins/design",
+      "description": "Skills for frontend design work, starting with showroom: a live, clickable preview of design, copy and motion options for one part of your UI, with a copy-my-choice button. Nothing is implemented.",
+      "category": "design"
     }
   ]
 }
